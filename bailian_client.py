@@ -5,7 +5,7 @@ import os
 
 import dashscope
 from dashscope import Application
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 
 
 class BailianError(RuntimeError):
@@ -21,10 +21,12 @@ class BailianClient:
 
     @classmethod
     def from_env(cls):
-        load_dotenv()
-        return cls(os.getenv("DASHSCOPE_API_KEY", "").strip(),
-                   os.getenv("BAILIAN_APP_ID", "").strip(),
-                   os.getenv("BAILIAN_WORKSPACE_ID", "").strip())
+        # 不把 .env 写入进程环境，允许网页在文件修改后重新加载。
+        config = dotenv_values(".env")
+        def value(name):
+            return (os.getenv(name) or config.get(name) or "").strip()
+        return cls(value("DASHSCOPE_API_KEY"), value("BAILIAN_APP_ID"),
+                   value("BAILIAN_WORKSPACE_ID"))
 
     @property
     def ready(self):

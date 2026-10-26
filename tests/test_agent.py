@@ -79,6 +79,17 @@ class Response(dict):
         self.status_code = status
 
 
+def test_config_reload_after_env_file_changes(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("DASHSCOPE_API_KEY", raising=False)
+    monkeypatch.delenv("BAILIAN_APP_ID", raising=False)
+    config = tmp_path / ".env"
+    config.write_text("DASHSCOPE_API_KEY=\nBAILIAN_APP_ID=\n", encoding="utf-8")
+    assert not BailianClient.from_env().ready
+    config.write_text("DASHSCOPE_API_KEY=fake-key\nBAILIAN_APP_ID=fake-app\n", encoding="utf-8")
+    assert BailianClient.from_env().ready
+
+
 @patch("bailian_client.Application.call")
 def test_error_does_not_expose_key_or_server_message(call):
     call.return_value = iter([Response(401, message="secret-test-key", request_id="trace")])
